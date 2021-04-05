@@ -1,0 +1,69 @@
+---
+title: "Project3_Programmer"
+author: "Camilla Belamarich"
+date: "3/28/2021"
+output: html_document
+---
+
+### Part 3
+
+```{r}
+# read combined counts matrix into R
+combined_counts <- read.csv("~/Desktop/BF528/Project 3/combined_counts.csv")
+
+# rename all the sample column names
+names(combined_counts)[names(combined_counts) == "SRR1177987Aligned.sortedByCoord.out.bam"] <- "SRR1177987"
+names(combined_counts)[names(combined_counts) == "SRR1177997Aligned.sortedByCoord.out.bam"] <- "SRR1177997"
+names(combined_counts)[names(combined_counts) == "SRR1178020Aligned.sortedByCoord.out.bam"] <- "SRR1178020"
+names(combined_counts)[names(combined_counts) == "SRR1177988Aligned.sortedByCoord.out.bam"] <- "SRR1177988"
+names(combined_counts)[names(combined_counts) == "SRR1177999Aligned.sortedByCoord.out.bam"] <- "SRR1177999"
+names(combined_counts)[names(combined_counts) == "SRR1178036Aligned.sortedByCoord.out.bam"] <- "SRR1178036"
+names(combined_counts)[names(combined_counts) == "SRR1177989Aligned.sortedByCoord.out.bam"] <- "SRR1177989"
+names(combined_counts)[names(combined_counts) == "SRR1178002Aligned.sortedByCoord.out.bam"] <- "SRR1178002"
+names(combined_counts)[names(combined_counts) == "SRR1178046Aligned.sortedByCoord.out.bam"] <- "SRR1178046"
+
+# rename the gene id column name
+names(combined_counts)[names(combined_counts) == "Geneid"] <- "gene_id"
+
+# export desired csv
+write.csv(combined_counts,"/Users/camillabelamarich/Desktop/BF528/counts_matrix.csv", row.names = FALSE)
+```
+
+### Part 4
+
+4.1
+```{r}
+# import control_counts matrix provided on SCC
+library(tidyverse)
+full_control_counts <- read_csv("~/Desktop/BF528/Project 3/control_counts.csv")
+# extracting only columns for tox group 1
+control_counts <- full_control_counts %>% select(Geneid, SRR1178000, SRR1178005, SRR1178007, SRR1177973, SRR1178016, SRR1178019)
+# renaming Geneid to be consistent
+names(control_counts)[names(control_counts) == "Geneid"] <- "gene_id"
+# merging two data frames with common key - gene_id
+merged_counts <- merge(combined_counts, control_counts, by.x = "gene_id")
+```
+
+
+A box plot containing count distributions for each of your samples
+```{r}
+# prepare for boxplot
+
+library(tidyverse)
+# read in data being used
+counts_matrix <- as_tibble(read_csv("~/Desktop/BF528/Project 3/new_counts_matrix.csv"))
+
+# also read in  table with group information
+info <- read_csv("~/Desktop/BF528/Project 3/toxgroup_1_rna_info.csv")
+info$mode_of_action <- factor(info$mode_of_action) # changed to a vector
+```
+
+plotting boxplot
+
+```{r}
+# re-organize counts matrix so chemical groups are together
+organized_counts_matrix <- counts_matrix[, c(1,3,6,9,4,7,10,2,5,8)]
+
+boxplot(organized_counts_matrix[,c(2:10)], horizontal=TRUE, ylim=c(0, 1000), las=1, pars=list(par(mar=c(4,7,4,4))),col=c("indianred1", "indianred1", "indianred1", "cornflowerblue", "cornflowerblue", "cornflowerblue", "palegreen3", "palegreen3", "palegreen3"),main="Distribution of Gene Counts", xlab="Gene Counts")
+
+```
