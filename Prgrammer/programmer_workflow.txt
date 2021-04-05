@@ -1,0 +1,74 @@
+module load subread
+
+# individually ran feature counts on the 15 samples
+featureCounts -T 16 -a rn4_refGene_20180308.gtf -o /projectnb/bf528/users/frizzled/project_3/Programmer/SRR1177973_counts.txt SRR1177973Aligned.sortedByCoord.out.bam
+
+featureCounts -T 16 -a rn4_refGene_20180308.gtf -o /projectnb/bf528/users/frizzled/project_3/Programmer/SRR1177987_counts.txt SRR1177987Aligned.sortedByCoord.out.bam
+
+featureCounts -T 16 -a rn4_refGene_20180308.gtf -o /projectnb/bf528/users/frizzled/project_3/Programmer/SRR1177988_counts.txt SRR1177988Aligned.sortedByCoord.out.bam
+
+featureCounts -T 16 -a rn4_refGene_20180308.gtf -o /projectnb/bf528/users/frizzled/project_3/Programmer/SRR1177988_counts.txt SRR1177988Aligned.sortedByCoord.out.bam
+
+featureCounts -T 16 -a rn4_refGene_20180308.gtf -o /projectnb/bf528/users/frizzled/project_3/Programmer/SRR1177989_counts.txt SRR1177989Aligned.sortedByCoord.out.bam
+
+featureCounts -T 16 -a rn4_refGene_20180308.gtf -o /projectnb/bf528/users/frizzled/project_3/Programmer/SRR1177997_counts.txt SRR1177997Aligned.sortedByCoord.out.bam
+
+featureCounts -T 16 -a rn4_refGene_20180308.gtf -o /projectnb/bf528/users/frizzled/project_3/Programmer/SRR1177999_counts.txt SRR1177999Aligned.sortedByCoord.out.bam
+
+featureCounts -T 16 -a rn4_refGene_20180308.gtf -o /projectnb/bf528/users/frizzled/project_3/Programmer/SRR1178000_counts.txt SRR1178000Aligned.sortedByCoord.out.bam
+
+featureCounts -T 16 -a rn4_refGene_20180308.gtf -o /projectnb/bf528/users/frizzled/project_3/Programmer/SRR1178002_counts.txt SRR1178002Aligned.sortedByCoord.out.bam
+
+featureCounts -T 16 -a rn4_refGene_20180308.gtf -o /projectnb/bf528/users/frizzled/project_3/Programmer/SRR1178005_counts.txt SRR1178005Aligned.sortedByCoord.out.bam
+
+featureCounts -T 16 -a rn4_refGene_20180308.gtf -o /projectnb/bf528/users/frizzled/project_3/Programmer/SRR1178007_counts.txt SRR1178007Aligned.sortedByCoord.out.bam
+
+featureCounts -T 16 -a rn4_refGene_20180308.gtf -o /projectnb/bf528/users/frizzled/project_3/Programmer/SRR1178016_counts.txt SRR1178016Aligned.sortedByCoord.out.bam
+
+featureCounts -T 16 -a rn4_refGene_20180308.gtf -o /projectnb/bf528/users/frizzled/project_3/Programmer/SRR1178019_counts.txt SRR1178019Aligned.sortedByCoord.out.bam
+
+featureCounts -T 16 -a rn4_refGene_20180308.gtf -o /projectnb/bf528/users/frizzled/project_3/Programmer/SRR1178020_counts.txt SRR1178020Aligned.sortedByCoord.out.bam
+
+featureCounts -T 16 -a rn4_refGene_20180308.gtf -o /projectnb/bf528/users/frizzled/project_3/Programmer/SRR1178036_counts.txt SRR1178036Aligned.sortedByCoord.out.bam
+
+featureCounts -T 16 -a rn4_refGene_20180308.gtf -o /projectnb/bf528/users/frizzled/project_3/Programmer/SRR1178046_counts.txt SRR1178046Aligned.sortedByCoord.out.bam
+
+# moved all txt files to a separate directory
+
+module load python2
+module load multiqc
+
+# ran multiqc on the new directory with just the count files
+multiqc .
+
+# extract essential count information
+cut -f 1,7 SRR1177987_counts.txt > SRR1177987_counts_clean.txt
+cut -f 1,7 SRR1177988_counts.txt > SRR1177988_counts_clean.txt
+cut -f 1,7 SRR1177989_counts.txt > SRR1177989_counts_clean.txt
+cut -f 1,7 SRR1177997_counts.txt > SRR1177997_counts_clean.txt
+cut -f 1,7 SRR1177999_counts.txt > SRR1177999_counts_clean.txt
+cut -f 1,7 SRR1178002_counts.txt > SRR1178002_counts_clean.txt
+cut -f 1,7 SRR1178020_counts.txt > SRR1178020_counts_clean.txt
+cut -f 1,7 SRR1178036_counts.txt > SRR1178036_counts_clean.txt
+cut -f 1,7 SRR1178046_counts.txt > SRR1178046_counts_clean.txt
+
+# remove header lines
+sed -i -e 1d SRR1177987_counts_clean.txt SRR1177988_counts_clean.txt SRR1177989_counts_clean.txt
+sed -i -e 1d SRR1177997_counts_clean.txt SRR1177999_counts_clean.txt SRR1178002_counts_clean.txt SRR1178020_counts_clean.txt SRR1178036_counts_clean.txt SRR1178036_counts_clean.txt SRR1178046_counts_clean.txt
+
+# extract just the gene id columns for combining
+cut -f 1 SRR1177987_counts_clean.txt > gene_ids.txt
+# now extract just the counts data for each sample
+cut -f 2 SRR1177987_counts_clean.txt > SRR1177987_counts_processed.txt
+cut -f 2 SRR1177988_counts_clean.txt > SRR1177988_counts_processed.txt
+cut -f 2 SRR1177989_counts_clean.txt > SRR1177989_counts_processed.txt
+cut -f 2 SRR1177997_counts_clean.txt > SRR1177997_counts_processed.txt
+cut -f 2 SRR1177999_counts_clean.txt > SRR1177999_counts_processed.txt
+cut -f 2 SRR1178002_counts_clean.txt > SRR1178002_counts_processed.txt
+cut -f 2 SRR1178020_counts_clean.txt > SRR1178020_counts_processed.txt
+cut -f 2 SRR1178036_counts_clean.txt > SRR1178036_counts_processed.txt
+cut -f 2 SRR1178046_counts_clean.txt > SRR1178046_counts_processed.txt
+
+# merge gene id column to counts for each sample
+paste -d"," gene_ids.txt SRR1177987_counts_processed.txt  SRR1177997_counts_processed.txt  SRR1178020_counts_processed.txt SRR1177988_counts_processed.txt  SRR1177999_counts_processed.txt  SRR1178036_counts_processed.txt SRR1177989_counts_processed.txt SRR1178002_counts_processed.txt  SRR1178046_counts_processed.txt
+ >> combined_counts.csv
