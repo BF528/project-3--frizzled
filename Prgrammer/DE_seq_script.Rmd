@@ -1,0 +1,300 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+BiocManager::install("DESeq2")
+BiocManager::install("apeglm")
+install.packages("hardhat", repos = "http://cran.us.r-project.org")
+library(tidyverse)
+library(DESeq2)
+library("apeglm")
+```
+
+
+```{r}
+library(hardhat)
+library(stringr)
+```
+
+```{r}
+# read in csv files 
+# control counts
+control_counts <- read_csv("~/Desktop/BF528/Project 3/control_counts.csv")
+# extracting only columns for tox group 1
+control_counts <- control_counts %>% select(Geneid, SRR1178000, SRR1178005, SRR1178007, SRR1177973, SRR1178016, SRR1178019)
+counts_matrix <- read_csv("~/Desktop/BF528/Project 3/counts_matrix.csv")
+# and convert them to tibbles
+control_counts <- as_tibble(control_counts)
+counts_matrix <- as_tibble(counts_matrix)
+# change control counts "Geneid" to "gene_id"
+names(control_counts)[names(control_counts) == "Geneid"] <- "gene_id"
+```
+
+```{r}
+# we need to join the tables
+de_combined_counts <- inner_join(counts_matrix, control_counts, by="gene_id")
+```
+
+```{r}
+# filter out rows that have any zeros for funzies
+de_combined_counts2 <- subset(de_combined_counts,rowSums(de_combined_counts==0)==0)
+```
+
+```{r}
+# read in data with information for each group
+info <- read_csv("~/Desktop/BF528/Project 3/toxgroup_1_rna_info.csv")
+# convert to factor variable
+info$mode_of_action <- factor(info$mode_of_action)
+```
+
+```{r}
+# extract only control samples
+controls <- info$Run[info$mode_of_action=="Control"] 
+experimentals <- info$Run[info$mode_of_action!="Control"]
+all_groups <- info$Run
+
+# print each
+controls
+experimentals
+all_groups
+```
+
+```{r}
+# extract mode of actions
+MOA_controls <- info$mode_of_action[info$mode_of_action=="Control"]
+MOA_experimentals <- info$mode_of_action[info$mode_of_action!="Control"]
+MOA <- info$mode_of_action
+
+MOA_controls
+MOA_experimentals
+MOA
+```
+
+```{r}
+# need to make first column in de_combined_counts2 the row names, so equal dimensions
+de_combined_counts2 <- column_to_rownames(de_combined_counts2, var="gene_id")
+```
+
+```{r}
+# need to be able to store deseq results
+deseq_results <- list()  
+deseq_results_tibble <- list() 
+```
+
+DESeq Analysis:
+```{r}
+# create the DESeq object
+dds_init <- DESeqDataSetFromMatrix(
+  countData = de_combined_counts2,
+  colData = info,
+  design= ~ mode_of_action
+)
+
+# relevel mode_of_action as factor
+dds_init$mode_of_action <- relevel(dds_init$mode_of_action, ref='Control')
+
+# run DESeq
+dds_init <- DESeq(dds_init)
+resultsNames(dds_init) # lists the coefficients
+
+# normalized counts of all samples
+normalized_counts <- counts(dds_init, normalized=TRUE)
+write.csv(normalized_counts,'~/Desktop/BF528/Project 3/deseq_normalized_counts_final.csv')
+```
+
+
+```{r}
+for (experimental_group in MOA_experimentals){
+  # extract names of each experimental group
+  exp_group_names <- info$Run[info$mode_of_action==experimental_group]
+  print(exp_group_names)
+  # only use control samples for tx group 1
+  control_group_names <- info$vehicle[info$Run==exp_group_names][1]
+  print(control_group_names)
+  controls <- info$Run[info$vehicle==control_group_names & info$mode_of_action=="Control"]
+  # subset names
+  new_data_de <- de_combined_counts2[,c(exp_group_names, controls)]
+  print(names(new_data_de)) # names of columns
+  # subset info data
+  new_data_info <- info[info$mode_of_action==experimental_group | (info$mode_of_action=="Control" & info$vehicle==control_group_names),]
+  print(new_data_info)
+  # need to make sure after subsetting, that the order of the genes match correctly
+  matched_names <- length(names(new_data_de)) == sum(names(new_data_de)==new_data_info$Run)
+  print(matched_names)
+  if(matched_names){
+    # create the DESeq object
+    dds <- DESeqDataSetFromMatrix(
+      countData = new_data_de,
+      colData = new_data_info,
+      design= ~ mode_of_action
+    )
+    
+    # relevel mode_of_action as factor
+    dds$mode_of_action <- relevel(dds$mode_of_action, ref='Control')
+    
+    # run DESeq
+    dds <- DESeq(dds)
+    res <- results(dds, contrast=c('mode_of_action', experimental_group,'Control'))
+    res <- lfcShrink(dds, coef=2)
+    # order results by adusted p-value
+    res2 <- as_tibble(res, rownames=NA)
+    res2 <- res2 %>% arrange(padj)
+    # append results to list
+    deseq_results[[experimental_group]] <- res
+    deseq_results_tibble[[experimental_group]] <- res2
+    # de results to csv
+    #write.csv(res2,'~/Desktop/BF528/Project 3/deseq_results.csv')
+  } 
+}
+```
+```{r}
+dds2 <- DESeqDataSetFromMatrix(
+      countData = temp_tib,
+      colData = temp_meta,
+      design= ~ mode_of_action
+    )
+normalized_counts <- counts(dds2, normalized=TRUE)
+    write.csv(normalized_counts,'~/Desktop/BF528/Project 3/deseq_normalized_counts_final.csv')
+```
+
+
+Extracting top 10 significant genes
+```{r}
+deseq_results_2 <- list()
+for (experimental_group in MOA_experimentals){
+  # change row names to column
+  deseq_results_2[[experimental_group]] <- rownames_to_column(deseq_results_tibble[[experimental_group]], var="gene_id")
+
+  # new column names
+  colnames(deseq_results_2[[experimental_group]]) <- paste(experimental_group, colnames(deseq_results_2[[experimental_group]]), sep="_")
+} 
+
+
+# generating csv for top 10
+significant_10 <- bind_cols(deseq_results_2$AhR[c(1:10), c(1, 6)],
+                          deseq_results_2$`CAR/PXR`[c(1:10), c(1, 6)], 
+                          deseq_results_2$Cytotoxic[c(1:10), c(1, 6)])
+write.csv(significant_10, "~/Desktop/BF528/Project 3/de_top10_significant.csv", row.names=FALSE)
+
+number_of_significant_genes <- list()
+deseq_significant <- list()
+
+for (experimental_group in MOA_experimentals){
+  deseq_significant[[experimental_group]] <- deseq_results_tibble[[experimental_group]][deseq_results_tibble[[experimental_group]]$padj < 0.05,]
+  number_of_significant_genes[[experimental_group]] <- length(deseq_significant[[experimental_group]]$padj)
+} 
+```
+
+
+```{r}
+# extracting significant genes for each group
+
+AhR_sig <- deseq_results_2$AhR
+sig_AhR <- AhR_sig[AhR_sig$AhR_padj<0.05,]
+sig_AhR <- na.omit(sig_AhR)
+write.csv(sig_AhR, "~/Desktop/BF528/Project 3/significant_AhR_final.csv", row.names=FALSE)
+
+CAR.PXR_sig <- deseq_results_2$`CAR/PXR`
+sig_CAR.PXR <- CAR.PXR_sig[CAR.PXR_sig$`CAR/PXR_padj`<0.05,]
+sig_CAR.PXR <- na.omit(sig_CAR.PXR)
+write.csv(sig_CAR.PXR, "~/Desktop/BF528/Project 3/significant_CAR.PXR_final.csv", row.names=FALSE)
+
+Cytotoxic_sig <- deseq_results_2$Cytotoxic
+sig_Cytotoxic <- Cytotoxic_sig[Cytotoxic_sig$Cytotoxic_padj<0.05,]
+sig_Cytotoxic <- na.omit(sig_Cytotoxic)
+write.csv(sig_Cytotoxic, "~/Desktop/BF528/Project 3/significant_Cytotoxic_final.csv", row.names=FALSE)
+```
+
+Histogram and Scatter Plot
+```{r}
+# Histograms of fold change values of significant DE genes
+hist(sig_AhR$AhR_log2FoldChange, 
+     breaks=30, xlim=c(-6, 6),
+     main="3-Methylcholanthrene", xlab="Log2 Fold Change")
+hist(sig_CAR.PXR$`CAR/PXR_log2FoldChange`, 
+     breaks=30, xlim=c(-6, 6),
+     main="Clotrimazole", xlab="Log2 Fold Change")
+hist(sig_Cytotoxic$Cytotoxic_log2FoldChange, 
+     breaks=30, xlim=c(-6, 6),
+     main="Chloroform", xlab="Log2 Fold Change")
+```
+
+
+```{r}
+# write out full deseq results for each treatment
+write.csv(deseq_results$AhR, "~/Desktop/BF528/Project 3/full_AhR_DESeq2.csv")
+write.csv(deseq_results$`CAR/PXR`, "~/Desktop/BF528/Project 3/full_CAR.PXR_DESeq2.csv")
+write.csv(deseq_results$Cytotoxic, "~/Desktop/BF528/Project 3/full_Cytotoxic_DESeq2.csv")
+
+full_AhR <- deseq_results$AhR
+full_CAR.PXR <- deseq_results$`CAR/PXR`
+full_cytotoxic <- deseq_results$Cytotoxic
+
+full_AhR <- na.omit(full_AhR)
+full_CAR.PXR <- na.omit(full_CAR.PXR)
+full_cytotoxic <- na.omit(full_cytotoxic)
+```
+
+```{r}
+#scatter plots of fold changes vs nominal p-value for all 3 treatments shown as volcano plots
+#there were no 0 fold change values found within the DEG files
+
+# creating vectors for not significant genes
+AhR_not_sig <- AhR_sig[AhR_sig$AhR_padj>0.05,]
+CAR.PXR_not_sig <- CAR.PXR_sig[CAR.PXR_sig$`CAR/PXR_padj`>0.05,]
+Cyto_not_sig <- Cytotoxic_sig[Cytotoxic_sig$Cytotoxic_padj>0.05,]
+
+AhR_not_sig <- na.omit(AhR_not_sig)
+AhR_nsx = AhR_not_sig$AhR_log2FoldChange
+AhR_nsy = -log10(AhR_not_sig$AhR_pvalue)
+
+CAR.PXR_not_sig <- na.omit(CAR.PXR_not_sig)
+CARPXR_nsx = CAR.PXR_not_sig$`CAR/PXR_log2FoldChange`
+CARPXR_nsy = -log10(CAR.PXR_not_sig$`CAR/PXR_pvalue`)
+
+Cyto_not_sig <- na.omit(Cyto_not_sig)
+Cyto_nsx = Cyto_not_sig$Cytotoxic_log2FoldChange
+Cyto_nsy = -log10(Cyto_not_sig$Cytotoxic_pvalue)
+
+#creating vectors for positive and negative fold change
+# positive
+AhR_positive_fc <- sig_AhR[sig_AhR$AhR_log2FoldChange > 0, ]
+AhR_px = AhR_positive_fc$AhR_log2FoldChange
+AhR_py = -log10(AhR_positive_fc$AhR_pvalue)
+
+CAR.PXR_positive_fc <- sig_CAR.PXR[sig_CAR.PXR$`CAR/PXR_log2FoldChange` > 0, ]
+CAR.PXR_px = CAR.PXR_positive_fc$`CAR/PXR_log2FoldChange`
+CAR.PXR_py = -log10(CAR.PXR_positive_fc$`CAR/PXR_pvalue`)
+  
+Cyto_positive_fc <- sig_Cytotoxic[sig_Cytotoxic$Cytotoxic_log2FoldChange > 0, ]
+Cyto_px = Cyto_positive_fc$Cytotoxic_log2FoldChange
+Cyto_py = -log10(Cyto_positive_fc$Cytotoxic_pvalue)
+
+# negative
+
+AhR_negative_fc <- sig_AhR[sig_AhR$AhR_log2FoldChange < 0, ]
+AhR_nx = AhR_negative_fc$AhR_log2FoldChange
+AhR_ny = -log10(AhR_negative_fc$AhR_pvalue)
+
+CAR.PXR_negative_fc <- sig_CAR.PXR[sig_CAR.PXR$`CAR/PXR_log2FoldChange` < 0, ]
+CAR.PXR_nx = CAR.PXR_negative_fc$`CAR/PXR_log2FoldChange`
+CAR.PXR_ny = -log10(CAR.PXR_negative_fc$`CAR/PXR_pvalue`)
+  
+Cyto_negative_fc <- sig_Cytotoxic[sig_Cytotoxic$Cytotoxic_log2FoldChange < 0, ]
+Cyto_nx = Cyto_negative_fc$Cytotoxic_log2FoldChange
+Cyto_ny = -log10(Cyto_negative_fc$Cytotoxic_pvalue)
+  
+
+clrs <- c("Not Significant"="grey", "Increased"="red", "Decreased"="blue")
+
+#3-METHYLCHOLANTHRENE
+ggplot() + geom_point(data=AhR_not_sig, aes(x=AhR_nsx, y=AhR_nsy, color="Not Significant"), alpha=0.3) + geom_point(data=AhR_positive_fc, aes(x=AhR_px, y=AhR_py, color="Increased"), alpha=0.3) + geom_point(data=AhR_negative_fc, aes(x=AhR_nx, y=AhR_ny, color="Decreased"), alpha=0.3) + xlab("Log Fold Change") + ylab("-log10(P-value)") + theme_bw() + labs(title="3-Methylcholanthrene", tag="A", color="Differentially Expressed") + scale_color_manual(values=clrs) + theme(plot.title = element_text(hjust = 0.5)) + xlim(-2,3) + ylim(0,16)
+
+#CLOTRIMAZOLE
+ggplot() + geom_point(data=CAR.PXR_not_sig, aes(x=CARPXR_nsx, y=CARPXR_nsy, color="Not Significant"), alpha=0.3) + geom_point(data=CAR.PXR_positive_fc, aes(x=CAR.PXR_px, y=CAR.PXR_py, color="Increased"), alpha=0.3) + geom_point(data=CAR.PXR_negative_fc, aes(x=CAR.PXR_nx, y=CAR.PXR_ny, color="Decreased"), alpha=0.3) + xlab("Log Fold Change") + ylab("-log10(P-value)") + theme_bw() + labs(title="Clotrimazole", tag="B", color="Differentially Expressed") + scale_color_manual(values=clrs) + theme(plot.title = element_text(hjust = 0.5)) + xlim(-4,4) + ylim(0,25)
+
+#CHLOROFORM
+ggplot() + geom_point(data=Cyto_not_sig, aes(x=Cyto_nsx, y=Cyto_nsy, color="Not Significant"), alpha=0.3) + geom_point(data=Cyto_positive_fc, aes(x=Cyto_px, y=Cyto_py, color="Increased"), alpha=0.3) + geom_point(data=Cyto_negative_fc, aes(x=Cyto_nx, y=Cyto_ny, color="Decreased"), alpha=0.3) + xlab("Log Fold Change") + ylab("-log10(P-value)") + theme_bw() + labs(title="Chloroform", tag="C", color="Differentially Expressed") + scale_color_manual(values=clrs) + theme(plot.title = element_text(hjust = 0.5)) + xlim(-8,8) + ylim(0,20)
+```
