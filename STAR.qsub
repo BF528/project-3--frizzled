@@ -1,0 +1,15 @@
+#!/bin/bash
+
+#$ -P bf528
+#$ -cwd
+#$ -pe omp 16
+#
+source /etc/bashrc
+
+module load gcc
+module load star/2.6.0c
+
+STAR --genomeDir /project/bf528/project_3/reference/rn4_STAR --runThreadN 16 --readFilesCommand zcat \
+     --readFilesIn /project/bf528/project_3/samples/${1}_1.fastq.gz /project/bf528/project_3/samples/${1}_2.fastq.gz \
+     --outSAMtype BAM SortedByCoordinate \
+     --outFileNamePrefix $1 \
