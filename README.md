@@ -1,6 +1,10 @@
 # Project Description
 
-A brief description of what this repository is for and what it contains
+Concordance of microarray and RNA-Seq differential gene expression
+
+This study by Wang et. al. aims to determine the concordance between microarrays and RNA-seq differential gene expression by comparing the results from both techniques. The study primarily tests the differences between the two methods by comparing the results from both methods in differential gene expression and creating predictive classifiers. The group devised a comprehensive study design to generate Illumina RNA-seq and Affymetrix microarray data from the same group of liver samples of rats under varying degrees of perturbation by 27 chemicals that represented multiple modes of action (MOA). The cross-platform concordance in terms of differentially expressed genes (DEGs) or enriched pathways was found to be highly correlated with treatment effect size, gene-expression abundance and the biological complexity of the MOA.
+
+Wang, C., Gong, B., Bushel, P. R., Thierry-Mieg, J., Thierry-Mieg, D., Xu, J., Fang, H., Hong, H., Shen, J., Su, Z., Meehan, J., Li, X., Yang, L., Li, H., Łabaj, P. P., Kreil, D. P., Megherbi, D., Gaj, S., Caiment, F., van Delft, J., … Tong, W. (2014). The concordance between RNA-seq and microarray data depends on chemical treatment and transcript abundance. Nature biotechnology, 32(9), 926–932. https://doi.org/10.1038/nbt.3001
 
 # Contributors
 
@@ -16,9 +20,13 @@ Yashrajsinh Jadeja - Biologist @Yashrajsinh-Jadeja
 
 Provide a brief description of each script/code file in this repo, what it does, and how to execute it
 
+Data Curator:
 Programmer:
 
   - programmer_workflow.txt: This file should be run first. It contains the script used on the command line to run feature counts on each of the samples (including controls). It also includes how multiqc was performed. Lastly, it shows how the data was subset to correctly make the counts matrix csv file.
   - featurecounts_script.Rmd: This file contains the additional subsetting script used to organize the counts matrix in R. Additionally, the script to plot the gene counts boxplot is included. This is an R markdown file.
  - DE_seq_script.Rmd: This file contains the full script used to perform the DESeq2 analysis. Additionally, this script contains the steps used to filter and extract significantly differentailly expressed genes for each treatment group and make a normalized counts file for all sample. Lastly, this script was used to generate histogram and scatter plots. 
   - It's important to metion that I labelled variables with the chemical treatment groups as their mode of action, but in the written report used the chemical name to reference them.
+
+Analyst:
+Biologist:
