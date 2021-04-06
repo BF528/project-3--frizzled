@@ -41,5 +41,7 @@ Programmer:
   - It's important to metion that I labelled variables with the chemical treatment groups as their mode of action, but in the written report used the chemical name to reference them.
 
 Analyst:
+  - BF528_project3_analyst_limma_final.R: This file should be run first. This contains the script used to perform Limma analysis for the microarray data. The total and top 10 significant differentially expressed genes were determined for each treatment group. 
+  - BF528_project3_analyst_final.R: This file should be run after all the above Data Curator, Programmer, and Analyst files have been executed. This contains a script to perform concordance analysis of DEG between the RNA-Seq and Microarray platforms for each of the 3 treatments: 3-Methylcholanthrene, Clotrimazole, and Chloroform. In addition, above and below-median subsets have been determined using the Average Expression of Microarray and baseMean of RNA-Seq, and concordance was computed on these subsets as well. Note that this file contains additional code at the end which used a different filtering method for determining DEG; the data corresponding to this section is shown in Supplemental Table 1 within the Project 3 Final Write-Up.  
 
 Biologist:
