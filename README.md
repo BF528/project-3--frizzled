@@ -22,9 +22,9 @@ Provide a brief description of each script/code file in this repo, what it does,
 
 Data Curator:
 
-  -STAR.qsub : This file used on command line to run STAR on fastq files. Each time the input should be two paired fastq files with same sample name. (For example we have XXX_1.fastq.gz and XXX_2.fastq.gz, input ```qsub STAR.qsub XXX``` to run)
-  -Multiqc.qsub: This file used on command line to run MultiQC based on the FastQC and STAR results we generated before.
-  -Multiqc_report_1.html: The report by Multiqc.
+  - STAR.qsub : This file used on command line to run STAR on fastq files. Each time the input should be two paired fastq files with same sample name. (For example we have XXX_1.fastq.gz and XXX_2.fastq.gz, input ```qsub STAR.qsub XXX``` to run)
+  - Multiqc.qsub: This file used on command line to run MultiQC based on the FastQC and STAR results we generated before.
+  - Multiqc_report_1.html: The report by Multiqc.
   
 Programmer:
 
