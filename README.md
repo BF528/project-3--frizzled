@@ -21,6 +21,11 @@ Yashrajsinh Jadeja - Biologist @Yashrajsinh-Jadeja
 Provide a brief description of each script/code file in this repo, what it does, and how to execute it
 
 Data Curator:
+
+  -STAR.qsub : This file used on command line to run STAR on fastq files. Each time the input should be two paired fastq files with same sample name. (For example we have XXX_1.fastq.gz and XXX_2.fastq.gz, input ```qsub STAR.qsub XXX``` to run)
+  -Multiqc.qsub: This file used on command line to run MultiQC based on the FastQC and STAR results we generated before.
+  -Multiqc_report_1.html: The report by Multiqc.
+  
 Programmer:
 
   - programmer_workflow.txt: This file should be run first. It contains the script used on the command line to run feature counts on each of the samples (including controls). It also includes how multiqc was performed. Lastly, it shows how the data was subset to correctly make the counts matrix csv file.
@@ -29,4 +34,5 @@ Programmer:
   - It's important to metion that I labelled variables with the chemical treatment groups as their mode of action, but in the written report used the chemical name to reference them.
 
 Analyst:
+
 Biologist:
