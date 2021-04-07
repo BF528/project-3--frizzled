@@ -46,3 +46,7 @@ Analyst:
   - BF528_project3_final.R: This file should be run after all the above Data Curator, Programmer, and Analyst files have been executed. This contains a script to perform concordance analysis of DEG between the RNA-Seq and Microarray platforms for each of the 3 treatments: 3-Methylcholanthrene, Clotrimazole, and Chloroform. In addition, above and below-median subsets have been determined using the Average Expression of Microarray and baseMean of RNA-Seq, and concordance was computed on these subsets as well. Note that this file contains additional code at the end which used a different filtering method for determining DEG; the data corresponding to this section is shown in Supplemental Table 1 within the Project 3 Final Write-Up.  
 
 Biologist:
+
+- DEG.R : This R script filters genes based on adj. pvalues and logFC values to create lists of differentially expressed genes.
+- heatmap.R : This R script performs filtering of genes based on coefficient of variation and plots a hierarchically clustered heatmap.
+- heatmap.html : This is a knitted R script containing the heatmap for the data processed in this study.
